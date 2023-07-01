@@ -2,9 +2,9 @@
 {
     public static class ComponentTools
     {
-        private static int _typesIdCounter;
+        private static uint _typesIdCounter;
 
-        public static int GetComponentId<T>()
+        public static uint GetComponentId<T>()
         {
             var id = ComponentTypes<T>.TypeId;
 

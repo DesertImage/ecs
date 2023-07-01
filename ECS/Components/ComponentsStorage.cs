@@ -4,13 +4,13 @@
     {
     }
 
-    public class ComponentsStorage<T> : ComponentsStorageBase
+    public class ComponentsStorage<T> : ComponentsStorageBase where T : unmanaged
     {
-        public readonly SparseSet<T> Data;
+        public readonly NativeSparseSet<T> Data;
 
         public ComponentsStorage(int denseCapacity, int sparseCapacity)
         {
-            Data = new SparseSet<T>(denseCapacity, sparseCapacity);
+            Data = new NativeSparseSet<T>(denseCapacity, sparseCapacity);
         }
     }
 }

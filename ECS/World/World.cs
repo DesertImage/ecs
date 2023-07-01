@@ -1,10 +1,11 @@
-using System.Collections.Generic;
+using System;
+using Unity.Collections;
 
 namespace DesertImage.ECS
 {
-    public struct World
+    public struct World : IDisposable
     {
-        public int Id { get; private set; }
+        public uint Id { get; private set; }
 
         public Entity SharedEntity { get; }
 
@@ -14,14 +15,14 @@ namespace DesertImage.ECS
         private GroupsManager GroupsManager { get; }
         private SystemsManager SystemsManager { get; }
 
-        public World(int id)
+        public World(uint id)
         {
             Id = id;
 
             State = new WorldState
             (
-                new Dictionary<int, Entity>(),
-                new Dictionary<int, SortedSetPoolable<int>>()
+                new NativeHashMap<uint, Entity>(ECSSettings.EntitiesCapacity, Allocator.Persistent),
+                new NativeHashMap<uint, NativeHashSet<uint>>(100, Allocator.Persistent)
             );
 
             EntitiesManager = new EntitiesManager(State);
@@ -32,25 +33,25 @@ namespace DesertImage.ECS
             GroupsManager.OnEntityCreated(SharedEntity.Id);
         }
 
-        public void ReplaceComponent<T>(int entityId, T component) where T : struct
+        public void ReplaceComponent<T>(uint entityId, T component) where T : struct
         {
             EntitiesManager.ReplaceComponent(entityId, component);
             GroupsManager.OnEntityComponentAdded(entityId, ComponentTools.GetComponentId<T>());
         }
 
-        public void RemoveComponent<T>(int entityId) where T : struct
+        public void RemoveComponent<T>(uint entityId) where T : struct
         {
             EntitiesManager.RemoveComponent<T>(entityId);
             GroupsManager.OnEntityComponentRemoved(entityId, ComponentTools.GetComponentId<T>());
         }
 
-        public bool HasComponent<T>(int entityId) where T : struct => EntitiesManager.HasComponent<T>(entityId);
+        public bool HasComponent<T>(uint entityId) where T : struct => EntitiesManager.HasComponent<T>(entityId);
 
-        public ref T GetComponent<T>(int entityId) where T : struct => ref EntitiesManager.GetComponent<T>(entityId);
+        public ref T GetComponent<T>(uint entityId) where T : struct => ref EntitiesManager.GetComponent<T>(entityId);
 
         public void Add<T>() where T : class, ISystem, new() => SystemsManager.Add<T>();
 
-        public Entity GetEntityById(int id) => EntitiesManager.GetEntityById(id);
+        public Entity GetEntityById(uint id) => EntitiesManager.GetEntityById(id);
 
         public Entity GetNewEntity()
         {
@@ -59,14 +60,19 @@ namespace DesertImage.ECS
             return newEntity;
         }
 
-        public SortedSetPoolable<int> GetEntityComponents(int id) => EntitiesManager.GetComponents(id);
-        public bool IsEntityAlive(int entityId) => EntitiesManager.IsAlive(entityId);
-        public void DestroyEntity(int entityId) => EntitiesManager.DestroyEntity(entityId);
+        public NativeHashSet<uint> GetEntityComponents(uint id) => EntitiesManager.GetComponents(id);
+        public bool IsEntityAlive(uint entityId) => EntitiesManager.IsAlive(entityId);
+        public void DestroyEntity(uint entityId) => EntitiesManager.DestroyEntity(entityId);
 
         public EntitiesGroup GetGroup(Matcher matcher) => GroupsManager.GetGroup(matcher);
 
         public void Tick(float deltaTime) => SystemsManager.Tick(deltaTime);
 
-        public void Dispose() => SystemsManager.Dispose();
+        public void Dispose()
+        {
+            State.Dispose();
+            EntitiesManager.Dispose();
+            SystemsManager.Dispose();
+        }
     }
 }

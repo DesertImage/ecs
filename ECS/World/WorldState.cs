@@ -1,18 +1,24 @@
 ﻿using System;
-using System.Collections.Generic;
+using Unity.Collections;
 
 namespace DesertImage.ECS
 {
     [Serializable]
-    public struct WorldState
+    public struct WorldState : IDisposable
     {
-        public readonly Dictionary<int, Entity> Entities;
-        public readonly Dictionary<int, SortedSetPoolable<int>> Components;
+        public readonly NativeHashMap<uint, Entity> Entities;
+        public readonly NativeHashMap<uint, NativeHashSet<uint>> Components;
 
-        public WorldState(Dictionary<int, Entity> entities, Dictionary<int, SortedSetPoolable<int>> components)
+        public WorldState(NativeHashMap<uint, Entity> entities, NativeHashMap<uint, NativeHashSet<uint>> components)
         {
             Entities = entities;
             Components = components;
+        }
+
+        public void Dispose()
+        {
+            Entities.Dispose();
+            Components.Dispose();
         }
     }
 }

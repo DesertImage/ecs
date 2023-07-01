@@ -10,7 +10,7 @@ namespace DesertImage.Pools
 
         public Pool(Func<T> factory = null) => Factory = factory;
 
-        public void Register(int count)
+        public void Register(uint count)
         {
             for (var i = 0; i < count; i++)
             {

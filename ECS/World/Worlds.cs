@@ -4,7 +4,7 @@
     {
         public static World Current;
 
-        private static int _idCounter = -1;
+        private static uint _idCounter;
 
         public static World Create()
         {

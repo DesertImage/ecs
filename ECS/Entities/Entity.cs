@@ -5,8 +5,8 @@ namespace DesertImage.ECS
     [Serializable]
     public struct Entity
     {
-        public readonly int Id;
+        public readonly uint Id;
 
-        public Entity(int id) => Id = id;
+        public Entity(uint id) => Id = id;
     }
 }

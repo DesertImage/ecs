@@ -5,18 +5,18 @@ namespace DesertImage.ECS
     [Serializable]
     public struct EntitiesGroup
     {
-        public readonly int Id;
+        public readonly uint Id;
 
-        public SparseSet<int> Entities;
+        public SparseSet<uint> Entities;
 
-        public EntitiesGroup(int id)
+        public EntitiesGroup(uint id)
         {
             Id = id;
-            Entities = new SparseSet<int>(ECSSettings.ComponentsDenseCapacity, ECSSettings.ComponentsSparseCapacity);
+            Entities = new SparseSet<uint>(ECSSettings.ComponentsDenseCapacity, ECSSettings.ComponentsSparseCapacity);
         }
 
-        public void Add(int entityId) => Entities.Add(entityId, entityId);
-        public void Remove(int entityId) => Entities.Remove(entityId);
-        public bool Contains(int entityId) => Entities.Contains(entityId);
+        public void Add(uint entityId) => Entities.Add(entityId, entityId);
+        public void Remove(uint entityId) => Entities.Remove(entityId);
+        public bool Contains(uint entityId) => Entities.Contains(entityId);
     }
 }

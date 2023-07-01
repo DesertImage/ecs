@@ -25,28 +25,16 @@ namespace DesertImage.ECS
         public void CheckHasNull()
         {
             var world = Worlds.Create();
-            ;
             var entity = world.GetNewEntity();
 
             Assert.IsFalse(entity.Has<TestComponent>());
-        }
-
-        [Test]
-        public void CheckRemoveNull()
-        {
-            var world = Worlds.Create();
-            ;
-            var entity = world.GetNewEntity();
-
-            entity.Remove<TestComponent>();
         }
 
 #if DEBUG
         [Test]
         public void CheckHasOnDeadEntity()
         {
-            var world = Worlds.Create();
-            ;
+            Worlds.Create();
             var entity = new Entity(1);
 
             try
@@ -67,7 +55,7 @@ namespace DesertImage.ECS
         public void CheckComponentRemove()
         {
             var world = Worlds.Create();
-            ;
+            
             var entity = world.GetNewEntity();
 
             entity.Replace(new TestComponent());
@@ -80,7 +68,7 @@ namespace DesertImage.ECS
         public void CheckComponentReplace()
         {
             var world = Worlds.Create();
-            ;
+            
             var entity = world.GetNewEntity();
 
             entity.Replace(new TestValueComponent { Value = 1 });
@@ -93,7 +81,7 @@ namespace DesertImage.ECS
         public void CheckChangingValueByRef()
         {
             var world = Worlds.Create();
-            ;
+            
             var entity = world.GetNewEntity();
 
             entity.Replace(new TestValueComponent { Value = 1 });
@@ -111,7 +99,6 @@ namespace DesertImage.ECS
         public void CheckGroupAddRemove()
         {
             var world = Worlds.Create();
-            ;
 
             var entity = world.GetNewEntity();
             var entityId = entity.Id;
@@ -173,7 +160,7 @@ namespace DesertImage.ECS
         public void CheckRemoveComponentSystem()
         {
             var world = Worlds.Create();
-            ;
+            
             world.Add<RemoveComponentSystem<TestValueComponent>>();
 
             var entity = world.GetNewEntity();

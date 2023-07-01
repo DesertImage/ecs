@@ -4,20 +4,20 @@ namespace DesertImage.ECS
 {
     public struct MatcherBuilder
     {
-        private static int _matcherIdCounter;
+        private static uint _matcherIdCounter;
         
-        private readonly HashSet<int> _all;
-        private readonly HashSet<int> _none;
-        private readonly HashSet<int> _any;
+        private readonly HashSet<uint> _all;
+        private readonly HashSet<uint> _none;
+        private readonly HashSet<uint> _any;
 
-        private MatcherBuilder(HashSet<int> all, HashSet<int> none, HashSet<int> any)
+        private MatcherBuilder(HashSet<uint> all, HashSet<uint> none, HashSet<uint> any)
         {
             _all = all;
             _none = none;
             _any = any;
         }
 
-        public static MatcherBuilder Create() => new(new HashSet<int>(), new HashSet<int>(), new HashSet<int>());
+        public static MatcherBuilder Create() => new(new HashSet<uint>(), new HashSet<uint>(), new HashSet<uint>());
 
         public Matcher Build() => new Matcher(++_matcherIdCounter, _all, _none, _any);
 

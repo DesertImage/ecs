@@ -1,17 +1,18 @@
 using System;
 using System.Collections.Generic;
-using DesertImage.Pools;
+using Unity.Collections;
 
 namespace DesertImage.ECS
 {
-    public struct EntitiesManager
+    public struct EntitiesManager : IDisposable
     {
-        private readonly Pool<SortedSetPoolable<int>> _pool;
         private readonly Stack<Entity> _entitiesPool;
 
         private ComponentsStorageBase[] _componentsStorages;
 
-        private static int _idCounter;
+        private static uint _idCounter;
+
+        private readonly Stack<NativeHashSet<uint>> _componentsPool;
 
         private readonly WorldState _state;
 
@@ -20,15 +21,15 @@ namespace DesertImage.ECS
             _state = state;
 
             _componentsStorages = new ComponentsStorageBase[ECSSettings.ComponentsDenseCapacity];
+            _componentsPool = new Stack<NativeHashSet<uint>>();
 
-            _pool = new Pool<SortedSetPoolable<int>>();
             _entitiesPool = new Stack<Entity>();
-
-            _idCounter = -1;
         }
 
-        public readonly Entity GetEntityById(int id) =>
-            _state.Entities.TryGetValue(id, out var entity) ? entity : GetNewEntity();
+        public readonly Entity GetEntityById(uint id)
+        {
+            return _state.Entities.TryGetValue(id, out var entity) ? entity : GetNewEntity();
+        }
 
         public readonly Entity GetNewEntity()
         {
@@ -37,14 +38,18 @@ namespace DesertImage.ECS
             var id = newEntity.Id;
 
             _state.Entities.Add(id, newEntity);
-            _state.Components.Add(id, _pool.GetInstance());
+            _state.Components.Add
+            (
+                id,
+                _componentsPool.Count > 0 ? _componentsPool.Pop() : new NativeHashSet<uint>(50, Allocator.Persistent)
+            );
 
             return newEntity;
         }
 
-        public readonly SortedSetPoolable<int> GetComponents(int id) => _state.Components[id];
+        public readonly NativeHashSet<uint> GetComponents(uint id) => _state.Components[id];
 
-        public void ReplaceComponent<T>(int entityId, T component) where T : struct
+        public void ReplaceComponent<T>(uint entityId, T component) where T : struct
         {
 #if DEBUG
             if (!IsAlive(entityId)) throw new Exception($"Entity {entityId} is not alive!");
@@ -58,24 +63,27 @@ namespace DesertImage.ECS
 
             var storage = GetStorage<T>(componentId);
 
-            storage.Data.Add(entityId, component);
+            storage.Data.Add((int)entityId, component);
             _state.Components[entityId].Add(componentId);
         }
 
-        public void RemoveComponent<T>(int entityId) where T : struct
+        public void RemoveComponent<T>(uint entityId) where T : struct
         {
 #if DEBUG
             if (!IsAlive(entityId)) throw new Exception($"Entity {entityId} is not alive!");
+            if (!HasComponent<T>(entityId)) throw new Exception($"Entity {entityId} has not {typeof(T).Name}");
+#else
+            if (!HasComponent<T>(entityId)) return;
 #endif
             var componentId = ComponentTools.GetComponentId<T>();
 
             var storage = GetStorage<T>(componentId);
 
-            storage.Data.Remove(entityId);
+            storage.Data.Remove((int)entityId);
             _state.Components[entityId].Remove(componentId);
         }
 
-        public bool HasComponent<T>(int entityId) where T : struct
+        public bool HasComponent<T>(uint entityId) where T : struct
         {
 #if DEBUG
             if (!IsAlive(entityId)) throw new Exception($"Entity {entityId} is not alive!");
@@ -96,11 +104,11 @@ namespace DesertImage.ECS
             return storage.Data.Contains(entityId);
         }
 
-        public ref T GetComponent<T>(int entityId) where T : struct
+        public ref T GetComponent<T>(uint entityId) where T : struct
         {
 #if DEBUG
             if (!IsAlive(entityId)) throw new Exception($"Entity {entityId} is not alive!");
-            if (!HasComponent<T>(entityId)) throw new Exception($"Entity {entityId} has not component {typeof(T)}");
+            if (!HasComponent<T>(entityId)) throw new Exception($"Entity {entityId} has not {typeof(T).Name}");
 #endif
             var componentId = ComponentTools.GetComponentId<T>();
             var storage = (ComponentsStorage<T>)_componentsStorages[componentId];
@@ -108,9 +116,9 @@ namespace DesertImage.ECS
             return ref storage.Data.Get(entityId);
         }
 
-        public bool IsAlive(int entityId) => _state.Entities.ContainsKey(entityId);
+        public bool IsAlive(uint entityId) => _state.Entities.ContainsKey(entityId);
 
-        public void DestroyEntity(int entityId)
+        public void DestroyEntity(uint entityId)
         {
             var components = GetComponents(entityId);
             components.Clear();
@@ -120,12 +128,12 @@ namespace DesertImage.ECS
             _state.Components.Remove(entityId);
             _state.Entities.Remove(entityId);
 
-            _pool.ReturnInstance(components);
+            _componentsPool.Push(components);
 
             _entitiesPool.Push(entity);
         }
 
-        private ComponentsStorage<T> GetStorage<T>(int componentId)
+        private ComponentsStorage<T> GetStorage<T>(uint componentId)
         {
             var storage = (ComponentsStorage<T>)_componentsStorages[componentId];
 
@@ -141,6 +149,14 @@ namespace DesertImage.ECS
             storage = newInstance;
 
             return storage;
+        }
+
+        public void Dispose()
+        {
+            while (_componentsPool.Count > 0)
+            {
+                _componentsPool.Pop().Dispose();
+            }
         }
     }
 }

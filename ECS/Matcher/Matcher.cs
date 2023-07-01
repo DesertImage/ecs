@@ -1,20 +1,21 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
 
 namespace DesertImage.ECS
 {
     public struct Matcher
     {
-        public int Id;
+        public readonly uint Id;
 
-        public SortedSet<int> Components { get; }
-        public SortedSet<int> NoneOfComponents { get; }
+        public SortedSet<uint> Components { get; }
+        public SortedSet<uint> NoneOfComponents { get; }
 
-        private readonly HashSet<int> _allOf;
-        private readonly HashSet<int> _noneOf;
-        private readonly HashSet<int> _anyOf;
+        private readonly HashSet<uint> _allOf;
+        private readonly HashSet<uint> _noneOf;
+        private readonly HashSet<uint> _anyOf;
 
-        public Matcher(int id, HashSet<int> allOf, HashSet<int> noneOf, HashSet<int> anyOf)
+        public Matcher(uint id, HashSet<uint> allOf, HashSet<uint> noneOf, HashSet<uint> anyOf)
         {
             Id = id;
 
@@ -22,16 +23,16 @@ namespace DesertImage.ECS
             _noneOf = noneOf;
             _anyOf = anyOf;
 
-            Components = new SortedSet<int>(allOf.Concat(anyOf).Except(_noneOf).ToArray());
-            NoneOfComponents = new SortedSet<int>(noneOf);
+            Components = new SortedSet<uint>(allOf.Concat(anyOf).Except(_noneOf).ToArray());
+            NoneOfComponents = new SortedSet<uint>(noneOf);
         }
 
-        public bool Check(SortedSet<int> componentIds)
+        public bool Check(NativeHashSet<uint> componentIds)
         {
             return HasNot(componentIds) && HasAll(componentIds) && HasAnyOf(componentIds);
         }
 
-        private bool HasNot(ICollection<int> componentIds)
+        private bool HasNot(NativeHashSet<uint> componentIds)
         {
             foreach (var id in _noneOf)
             {
@@ -41,7 +42,7 @@ namespace DesertImage.ECS
             return true;
         }
 
-        private bool HasAll(ICollection<int> componentIds)
+        private bool HasAll(NativeHashSet<uint> componentIds)
         {
             foreach (var id in _allOf)
             {
@@ -51,7 +52,7 @@ namespace DesertImage.ECS
             return true;
         }
 
-        private bool HasAnyOf(ICollection<int> componentIds)
+        private bool HasAnyOf(NativeHashSet<uint> componentIds)
         {
             if (_anyOf.Count == 0) return true;
             

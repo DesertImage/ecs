@@ -1,36 +1,37 @@
 using System.Collections.Generic;
+using Unity.Collections;
 
 namespace DesertImage.ECS
 {
     public struct GroupsManager
     {
-        private readonly Dictionary<int, List<int>> _entityGroups;
-        private readonly Dictionary<int, int> _matcherGroups;
+        private readonly NativeHashMap<uint, NativeList<uint>> _entityGroups;
+        private readonly NativeHashMap<uint, int> _matcherGroups;
 
-        private readonly Dictionary<int, Matcher> _groupMatchers;
-        private readonly Dictionary<int, List<int>> _componentGroups;
-        private readonly Dictionary<int, List<int>> _noneOfComponentGroups;
+        private readonly NativeHashMap<uint, Matcher> _groupMatchers;
+        private readonly NativeHashMap<uint, NativeList<uint>> _componentGroups;
+        private readonly NativeHashMap<uint, NativeList<uint>> _noneOfComponentGroups;
 
-        private readonly List<EntitiesGroup> _groups;
+        private readonly NativeList<EntitiesGroup> _groups;
 
         private readonly EntitiesManager _entitiesManager;
 
-        private static int _groupsIdCounter = -1;
+        private static uint _groupsIdCounter;
 
         public GroupsManager(EntitiesManager entitiesManager)
         {
             _entitiesManager = entitiesManager;
 
-            _entityGroups = new Dictionary<int, List<int>>();
-            _matcherGroups = new Dictionary<int, int>();
+            _entityGroups = new NativeHashMap<uint, NativeList<uint>>();
+            _matcherGroups = new NativeHashMap<uint, uint>();
 
-            _groupMatchers = new Dictionary<int, Matcher>();
-            _componentGroups = new Dictionary<int, List<int>>();
-            _noneOfComponentGroups = new Dictionary<int, List<int>>();
+            _groupMatchers = new NativeHashMap<uint, Matcher>();
+            _componentGroups = new NativeHashMap<uint, NativeList<uint>>();
+            _noneOfComponentGroups = new NativeHashMap<uint, NativeList<uint>>();
 
-            _groups = new List<EntitiesGroup>(20);
+            _groups = new NativeList<EntitiesGroup>(20);
 
-            _groupsIdCounter = -1;
+            _groupsIdCounter = 0;
         }
 
         public readonly EntitiesGroup GetGroup(Matcher matcher)
@@ -62,7 +63,7 @@ namespace DesertImage.ECS
                 }
                 else
                 {
-                    _componentGroups.Add(componentId, new List<int> { newGroupId });
+                    _componentGroups.Add(componentId, new List<uint> { newGroupId });
                 }
             }
 
@@ -74,14 +75,14 @@ namespace DesertImage.ECS
                 }
                 else
                 {
-                    _noneOfComponentGroups.Add(componentId, new List<int> { newGroupId });
+                    _noneOfComponentGroups.Add(componentId, new List<uint> { newGroupId });
                 }
             }
 
             return newGroup;
         }
 
-        private void AddToGroup(EntitiesGroup group, int entityId)
+        private void AddToGroup(EntitiesGroup group, uint entityId)
         {
             var groupId = group.Id;
 
@@ -93,19 +94,19 @@ namespace DesertImage.ECS
             }
             else
             {
-                _entityGroups.Add(entityId, new List<int> { groupId });
+                _entityGroups.Add(entityId, new List<uint> { groupId });
             }
         }
 
-        private void RemoveFromGroup(EntitiesGroup group, int entityId)
+        private void RemoveFromGroup(EntitiesGroup group, uint entityId)
         {
             group.Remove(entityId);
             _entityGroups[entityId].Remove(group.Id);
         }
 
-        public void OnEntityCreated(int entityId) => _entityGroups.Add(entityId, new List<int>());
+        public void OnEntityCreated(uint entityId) => _entityGroups.Add(entityId, new List<uint>());
 
-        public void OnEntityComponentAdded(int entityId, int componentId)
+        public void OnEntityComponentAdded(uint entityId, uint componentId)
         {
             var groups = _entityGroups[entityId];
 
@@ -132,7 +133,7 @@ namespace DesertImage.ECS
             }
         }
 
-        private void ValidateEntityAdd(int entityId, IReadOnlyList<int> groups)
+        private void ValidateEntityAdd(uint entityId, IReadOnlyList<uint> groups)
         {
             for (var i = groups.Count - 1; i >= 0; i--)
             {
@@ -151,7 +152,7 @@ namespace DesertImage.ECS
         }
 
         //TODO:refactor
-        private void ValidateEntityRemove(int entityId, IReadOnlyList<int> groups)
+        private void ValidateEntityRemove(uint entityId, IReadOnlyList<uint> groups)
         {
             for (var i = groups.Count - 1; i >= 0; i--)
             {
@@ -169,7 +170,7 @@ namespace DesertImage.ECS
             }
         }
 
-        public void OnEntityComponentRemoved(int entityId, int componentId)
+        public void OnEntityComponentRemoved(uint entityId, uint componentId)
         {
             var groups = _entityGroups[entityId];
 
